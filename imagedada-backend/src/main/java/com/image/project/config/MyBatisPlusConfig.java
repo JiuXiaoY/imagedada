@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Configuration;
 /**
  * MyBatis Plus 配置
  *
- * @author https://github.com/liyupi
  */
 @Configuration
 @MapperScan("com.image.project.mapper")
@@ -19,7 +18,7 @@ public class MyBatisPlusConfig {
     /**
      * 拦截器配置
      *
-     * @return
+     * @return 返回
      */
     @Bean
     public MybatisPlusInterceptor mybatisPlusInterceptor() {
