@@ -19,6 +19,7 @@ import com.image.project.model.entity.User;
 import com.image.project.model.entity.UserAnswer;
 import com.image.project.model.enums.ReviewStatusEnum;
 import com.image.project.model.vo.UserAnswerVO;
+import com.image.project.scoring.ScoringStrategyExecutor;
 import com.image.project.service.AppService;
 import com.image.project.service.UserAnswerService;
 import com.image.project.service.UserService;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 用户答案接口
@@ -49,6 +51,9 @@ public class UserAnswerController {
 
     @Resource
     private AppService appService;
+
+    @Resource
+    private ScoringStrategyExecutor scoringStrategyExecutor;
 
     // region 增删改查
 
@@ -73,6 +78,7 @@ public class UserAnswerController {
         Long appId = userAnswerAddRequest.getAppId();
         App app = appService.getById(appId);
         ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR);
+        // 判断应用是否已经通过审核
         if (!ReviewStatusEnum.PASS.equals(ReviewStatusEnum.getEnumByValue(app.getReviewStatus()))) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "应用未通过审核，无法答题");
         }
@@ -86,9 +92,9 @@ public class UserAnswerController {
         long newUserAnswerId = userAnswer.getId();
         // todo 调用评分模块
         try {
-            // UserAnswer userAnswerWithResult = scoringStrategyExecutor.doScore(choices, app);
-            // userAnswerWithResult.setId(newUserAnswerId);
-            // userAnswerService.updateById(userAnswerWithResult);
+            UserAnswer userAnswerWithResult = scoringStrategyExecutor.doScore(choices, app);
+            userAnswerWithResult.setId(newUserAnswerId);
+            userAnswerService.updateById(userAnswerWithResult);
         } catch (Exception e) {
             e.printStackTrace();
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "评分错误");

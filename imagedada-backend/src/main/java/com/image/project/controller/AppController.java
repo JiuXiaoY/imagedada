@@ -2,10 +2,7 @@ package com.image.project.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.image.project.annotation.AuthCheck;
-import com.image.project.common.BaseResponse;
-import com.image.project.common.DeleteRequest;
-import com.image.project.common.ErrorCode;
-import com.image.project.common.ResultUtils;
+import com.image.project.common.*;
 import com.image.project.constant.UserConstant;
 import com.image.project.exception.BusinessException;
 import com.image.project.exception.ThrowUtils;
@@ -15,6 +12,7 @@ import com.image.project.model.dto.app.AppQueryRequest;
 import com.image.project.model.dto.app.AppUpdateRequest;
 import com.image.project.model.entity.App;
 import com.image.project.model.entity.User;
+import com.image.project.model.enums.ReviewStatusEnum;
 import com.image.project.model.vo.AppVO;
 import com.image.project.service.AppService;
 import com.image.project.service.UserService;
@@ -24,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.Date;
 
 /**
  * 应用接口
@@ -166,7 +165,7 @@ public class AppController {
      */
     @PostMapping("/list/page/vo")
     public BaseResponse<Page<AppVO>> listAppVOByPage(@RequestBody AppQueryRequest appQueryRequest,
-                                                               HttpServletRequest request) {
+                                                     HttpServletRequest request) {
         long current = appQueryRequest.getCurrent();
         long size = appQueryRequest.getPageSize();
         // 限制爬虫
@@ -187,7 +186,7 @@ public class AppController {
      */
     @PostMapping("/my/list/page/vo")
     public BaseResponse<Page<AppVO>> listMyAppVOByPage(@RequestBody AppQueryRequest appQueryRequest,
-                                                                 HttpServletRequest request) {
+                                                       HttpServletRequest request) {
         ThrowUtils.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR);
         // 补充查询条件，只查询当前登录用户的数据
         User loginUser = userService.getLoginUser(request);
@@ -236,4 +235,47 @@ public class AppController {
     }
 
     // endregion
+
+    /**
+     * 审核应用
+     * @param reviewRequest 参数
+     * @param request 请求
+     * @return true or false
+     */
+    @PostMapping("/review")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Boolean> reviewApp(@RequestBody ReviewRequest reviewRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(reviewRequest == null, ErrorCode.PARAMS_ERROR);
+        //获取参数，应用ID，审核状态
+        Long id = reviewRequest.getId();
+        Integer reviewStatus = reviewRequest.getReviewStatus();
+
+        // 校验审核状态是否合法
+        ReviewStatusEnum reviewStatusEnum = ReviewStatusEnum.getEnumByValue(reviewStatus);
+        if (id == null || reviewStatusEnum == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+
+        // 判断是否存在
+        App oldApp = appService.getById(id);
+        ThrowUtils.throwIf(oldApp == null, ErrorCode.NOT_FOUND_ERROR);
+
+        // 已经是该状态
+        if (oldApp.getReviewStatus().equals(reviewStatus)) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "该应用已经审核过了");
+        }
+
+        // 更新审核状态,必须是已经登录了
+        User loginUser = userService.getLoginUser(request);
+        // 更新
+        App app = new App();
+        app.setId(id);
+        app.setReviewStatus(reviewStatus);
+        app.setReviewerId(loginUser.getId());
+        app.setReviewTime(new Date());
+        app.setReviewMessage(reviewRequest.getReviewMessage());
+        boolean updateRes = appService.updateById(app);
+        ThrowUtils.throwIf(!updateRes, ErrorCode.OPERATION_ERROR);
+        return ResultUtils.success(true);
+    }
 }
