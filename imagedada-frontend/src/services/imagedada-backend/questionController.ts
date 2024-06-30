@@ -107,6 +107,21 @@ export async function listMyQuestionVoByPageUsingPost(
   });
 }
 
+/** getQuestionContentDto GET /api/question/questionContentDto */
+export async function getQuestionContentDtoUsingGet(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getQuestionContentDtoUsingGETParams,
+  options?: { [key: string]: any },
+) {
+  return request<API.BaseResponseQuestionContentDTO_>('/api/question/questionContentDto', {
+    method: 'GET',
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
+
 /** updateQuestion POST /api/question/update */
 export async function updateQuestionUsingPost(
   body: API.QuestionUpdateRequest,

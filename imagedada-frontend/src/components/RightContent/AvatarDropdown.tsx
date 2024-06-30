@@ -37,7 +37,7 @@ const useStyles = createStyles(({ token }) => {
   };
 });
 
-export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({ menu = true, children }) => {
+export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({ menu = false, children }) => {
   const { styles } = useStyles();
 
   const { initialState, setInitialState } = useModel('@@initialState');

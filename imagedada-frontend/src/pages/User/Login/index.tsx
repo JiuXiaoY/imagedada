@@ -18,7 +18,7 @@ import { Tabs, message } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useState } from 'react';
 import Settings from '../../../../config/defaultSettings';
-import {userLoginUsingPost} from "@/services/imagedada-backend/userController";
+import { userLoginUsingPost } from '@/services/imagedada-backend/userController';
 
 const useStyles = createStyles(({ token }) => {
   return {
@@ -114,8 +114,8 @@ const Login: React.FC = () => {
             maxWidth: '75vw',
           }}
           logo={<img alt="logo" src="/logo.png" />}
-          title="Image Api"
-          subTitle={'Image Api, 一个简单且实用的在线接口开放平台'}
+          title="Image DADA"
+          subTitle={'Image DADA, 一个简单且实用的答题平台'}
           initialValues={{
             autoLogin: true,
           }}

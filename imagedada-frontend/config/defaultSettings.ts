@@ -9,7 +9,7 @@ interface ExtendedProSettings extends ProSettings {
 
 // Define the Settings object with the correct type
 const Settings: ExtendedProSettings = {
-  title: 'Image Design API',
+  title: 'Image Design DaDa',
   navTheme: "light",
   colorPrimary: "#722ED1",
   layout: 'top',

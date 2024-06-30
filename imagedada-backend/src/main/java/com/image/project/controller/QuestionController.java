@@ -1,6 +1,7 @@
 package com.image.project.controller;
 
 import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.image.project.annotation.AuthCheck;
 import com.image.project.common.BaseResponse;
