@@ -105,11 +105,5 @@ knife4j:
         api-rule: package
         api-rule-resources:
           - com.image.project.controller
-#ai:
-#  apiKey: 待填
-#
-#dysms:
-#  ALIBABA_CLOUD_ACCESS_KEY_ID: 待填
-#  ALIBABA_CLOUD_ACCESS_KEY_SECRET: 待填
 
 
