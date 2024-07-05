@@ -14,17 +14,17 @@ spring:
   # 需替换配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://8.134.112.58:3306/imagedada
-    username: zzRd
-    password: cqj1211@
+    url:
+    username:
+    password:
   # Redis 配置
   # 需替换配置
   redis:
     database: 1
-    host: 8.134.112.58
+    host:
     port: 6379
     timeout: 5000
-    password: 181399
+    password:
   session:
     store-type: redis
     timeout: 2592000
@@ -45,9 +45,9 @@ spring:
       imagedada:
         type: com.zaxxer.hikari.HikariDataSource
         driver-class-name: com.mysql.cj.jdbc.Driver
-        jdbc-url: jdbc:mysql://8.134.112.58:3306/imagedada
-        username: zzRd
-        password: cqj1211@
+        jdbc-url:
+        username:
+        password:
     # 规则配置
     rules:
       sharding:
@@ -92,9 +92,9 @@ knife4j:
     username: root
     password: 123456
 
-ai:
-  apiKey: 6bfa02695b698abdd0506b1027082f85.ZDOQJHwuxCQpwrKj
-
-dysms:
-  ALIBABA_CLOUD_ACCESS_KEY_ID: LTAI5tF5oQxWf3FhhFUS8CEq
-  ALIBABA_CLOUD_ACCESS_KEY_SECRET: JMxSCfLFof442RSmiSzMUBsxQ4i1Kk
+#ai:
+#  apiKey: 待填
+#
+#dysms:
+#  ALIBABA_CLOUD_ACCESS_KEY_ID: 待填
+#  ALIBABA_CLOUD_ACCESS_KEY_SECRET: 待填
