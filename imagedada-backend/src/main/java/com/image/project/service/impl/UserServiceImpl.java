@@ -6,7 +6,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.image.project.constant.CommonConstant;
 import com.image.project.constant.UserConstant;
 import com.image.project.exception.BusinessException;
+import com.image.project.manager.DysmsManager;
 import com.image.project.mapper.UserMapper;
+import com.image.project.model.entity.Verificationcode;
 import com.image.project.service.UserService;
 import com.image.project.common.ErrorCode;
 import com.image.project.model.dto.user.UserQueryRequest;
@@ -14,11 +16,13 @@ import com.image.project.model.entity.User;
 import com.image.project.model.enums.UserRoleEnum;
 import com.image.project.model.vo.LoginUserVO;
 import com.image.project.model.vo.UserVO;
+import com.image.project.service.VerificationcodeService;
 import com.image.project.utils.SqlUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +45,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * 盐值，混淆密码
      */
     public static final String SALT = "image";
+
+    @Resource
+    private VerificationcodeService verificationcodeService;
 
     @Override
     public long userRegister(String userAccount, String userPassword, String checkPassword) {
@@ -78,6 +85,37 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             }
             return user.getId();
         }
+    }
+
+    @Override
+    public LoginUserVO userLoginSms(String phone, String code, HttpServletRequest request) {
+        // 1. 校验
+        if (StringUtils.isAnyBlank(code, phone)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数为空");
+        }
+
+        // 查询用户是否存在
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("phone", phone);
+        User user = this.baseMapper.selectOne(queryWrapper);
+        // 用户不存在
+        if (user == null) {
+            log.info("user login failed, cannot found user match phone");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "手机号不存在或填写错误");
+        }
+        // todo 如何校验呢？
+        QueryWrapper<Verificationcode> verificationcodeQueryWrapper = new QueryWrapper<>();
+        verificationcodeQueryWrapper.eq("code", code).eq("phoneNumber", phone);
+        Verificationcode verificationcode = verificationcodeService.getOne(verificationcodeQueryWrapper);
+        if (verificationcode == null) {
+            log.info("user login failed, cannot found verificationcode match phone");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "验证码错误或填写错误");
+        }
+        // 删除
+        verificationcodeService.remove(verificationcodeQueryWrapper);
+        // 3. 记录用户的登录态
+        request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE, user);
+        return this.getLoginUserVO(user);
     }
 
     @Override

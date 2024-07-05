@@ -58,10 +58,12 @@ public class UserAnswerServiceImpl extends ServiceImpl<UserAnswerMapper, UserAns
         ThrowUtils.throwIf(userAnswer == null, ErrorCode.PARAMS_ERROR);
         // 从对象中取值
         Long appId = userAnswer.getAppId();
+        Long id = userAnswer.getId();
         // 创建数据时，参数不能为空
         if (add) {
             // 补充校验规则
             ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "appId 非法");
+            ThrowUtils.throwIf(id == null || id <= 0, ErrorCode.PARAMS_ERROR, "id 非法");
         }
         // 修改数据时，有参数则校验
         // 补充校验规则
@@ -170,9 +172,7 @@ public class UserAnswerServiceImpl extends ServiceImpl<UserAnswerMapper, UserAns
             return userAnswerVOPage;
         }
         // 对象列表 => 封装对象列表
-        List<UserAnswerVO> userAnswerVOList = userAnswerList.stream().map(userAnswer -> {
-            return UserAnswerVO.objToVo(userAnswer);
-        }).collect(Collectors.toList());
+        List<UserAnswerVO> userAnswerVOList = userAnswerList.stream().map(UserAnswerVO::objToVo).collect(Collectors.toList());
 
         // 可以根据需要为封装对象补充值，不需要的内容可以删除
         // region 可选

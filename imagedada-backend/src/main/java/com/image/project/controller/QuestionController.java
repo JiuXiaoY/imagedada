@@ -1,5 +1,6 @@
 package com.image.project.controller;
 
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -8,22 +9,35 @@ import com.image.project.common.BaseResponse;
 import com.image.project.common.DeleteRequest;
 import com.image.project.common.ErrorCode;
 import com.image.project.common.ResultUtils;
+import com.image.project.constant.QuestionConstant;
 import com.image.project.constant.UserConstant;
 import com.image.project.exception.BusinessException;
 import com.image.project.exception.ThrowUtils;
+import com.image.project.manager.AiManager;
 import com.image.project.model.dto.question.*;
+import com.image.project.model.entity.App;
 import com.image.project.model.entity.Question;
 import com.image.project.model.entity.User;
+import com.image.project.model.enums.AppTypeEnum;
 import com.image.project.model.vo.QuestionVO;
+import com.image.project.service.AppService;
 import com.image.project.service.QuestionService;
 import com.image.project.service.UserService;
+import com.zhipu.oapi.service.v4.model.ModelData;
+import io.reactivex.Flowable;
+import io.reactivex.Scheduler;
+import io.reactivex.schedulers.Schedulers;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 题目接口
@@ -41,6 +55,15 @@ public class QuestionController {
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private AppService appService;
+
+    @Resource
+    private AiManager aiManager;
+
+    @Resource
+    private Scheduler vipScheduler;
 
     // region 增删改查
 
@@ -241,6 +264,185 @@ public class QuestionController {
         boolean result = questionService.updateById(question);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
+    }
+
+    // endregion
+
+    // region AI生成功能
+    private String getGenerateQuestionUserMessage(App app, int questionNum, int optionNum) {
+        StringBuilder userMessage = new StringBuilder();
+        userMessage.append(app.getAppName()).append("\n");
+        userMessage.append("【【【").append(app.getAppDesc()).append("】】】").append("\n");
+        userMessage.append(Objects.requireNonNull(AppTypeEnum.getEnumByValue(app.getAppType())).getText()).append("\n");
+        userMessage.append(questionNum).append("\n");
+        userMessage.append(optionNum).append("\n");
+        return userMessage.toString();
+    }
+
+    @PostMapping("ai_generate")
+    public BaseResponse<List<QuestionContentDTO>> aiGenerateQuestion(@RequestBody AiGenerateRequest aiGenerateRequest,
+                                                                     HttpServletRequest request) {
+        ThrowUtils.throwIf(aiGenerateRequest == null, ErrorCode.PARAMS_ERROR);
+        // 获取参数
+        Long appId = aiGenerateRequest.getAppId();
+        int questionNum = aiGenerateRequest.getQuestionNum();
+        int optionNum = aiGenerateRequest.getOptionNum();
+
+        // 获取应用信息
+        App app = appService.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "app不存在");
+
+        // 获取用户信息
+        String userMessage = getGenerateQuestionUserMessage(app, questionNum, optionNum);
+        // 调用AI生成题目
+        String result = aiManager.doSyncRequest(QuestionConstant.QUESTION_PROMPT, userMessage, null);
+        // 截取有效内容
+        int startIndex = result.indexOf("[");
+        int endIndex = result.lastIndexOf("]");
+        if (startIndex != -1 && endIndex != -1 && startIndex < endIndex) {
+            result = result.substring(startIndex, endIndex + 1);
+        } else {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI生成题目失败");
+        }
+        List<QuestionContentDTO> questionContentDTOS = JSONUtil.toList(result, QuestionContentDTO.class);
+        return ResultUtils.success(questionContentDTOS);
+    }
+
+
+    // endregion
+
+    // region SSE
+
+    @GetMapping("/ai_generate/sse")
+    public SseEmitter aiGenerateQuestionSSE(AiGenerateRequest aiGenerateRequest,
+                                            HttpServletRequest request) {
+        ThrowUtils.throwIf(aiGenerateRequest == null, ErrorCode.PARAMS_ERROR);
+        // 获取参数
+        Long appId = aiGenerateRequest.getAppId();
+        int questionNum = aiGenerateRequest.getQuestionNum();
+        int optionNum = aiGenerateRequest.getOptionNum();
+
+        // 获取应用信息
+        App app = appService.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "app不存在");
+        // 获取用户信息
+        String userMessage = getGenerateQuestionUserMessage(app, questionNum, optionNum);
+
+        // 建立SSE连接对象
+        SseEmitter sseEmitter = new SseEmitter(0L);
+
+        // 调用AI生成题目
+        Flowable<ModelData> flowable = aiManager.doStreamRequest(QuestionConstant.QUESTION_PROMPT, userMessage, null);
+        // 定义一个计数器,原子型
+        AtomicInteger count = new AtomicInteger(0);
+        StringBuilder SingleQuestion = new StringBuilder();
+        flowable
+                .observeOn(Schedulers.io())
+                .map(modelData -> modelData.getChoices().get(0).getDelta().getContent())
+                .map(content -> content.replaceAll("\\s", ""))
+                .filter(StrUtil::isNotBlank)
+                .flatMap(content -> {
+                    List<Character> characters = new ArrayList<>();
+                    for (char c : content.toCharArray()) {
+                        characters.add(c);
+                    }
+                    return Flowable.fromIterable(characters);
+                })
+                .doOnNext(c -> {
+                    if (c.equals('{')) {
+                        count.addAndGet(1);
+                    }
+
+                    if (count.get() > 0) {
+                        SingleQuestion.append(c);
+                    }
+
+                    if (c.equals('}')) {
+                        count.addAndGet(-1);
+                        if (count.get() == 0) {
+                            sseEmitter.send(JSONUtil.toJsonStr(SingleQuestion.toString()));
+                            SingleQuestion.setLength(0);
+                        }
+                    }
+
+                })
+                .doOnError((e) -> {
+                    log.error("SSE异常", e);
+                })
+                .doOnComplete(sseEmitter::complete)
+                .subscribe();
+
+        return sseEmitter;
+    }
+
+    @GetMapping("/ai_generate/sse/test")
+    public SseEmitter aiGenerateQuestionSSEVip(AiGenerateRequest aiGenerateRequest,
+                                               HttpServletRequest request) {
+        ThrowUtils.throwIf(aiGenerateRequest == null, ErrorCode.PARAMS_ERROR);
+        // 获取参数
+        Long appId = aiGenerateRequest.getAppId();
+        int questionNum = aiGenerateRequest.getQuestionNum();
+        int optionNum = aiGenerateRequest.getOptionNum();
+
+        // 获取应用信息
+        App app = appService.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "app不存在");
+        // 获取用户信息
+        String userMessage = getGenerateQuestionUserMessage(app, questionNum, optionNum);
+
+        // 建立SSE连接对象
+        SseEmitter sseEmitter = new SseEmitter(0L);
+
+        // 调用AI生成题目
+        Flowable<ModelData> flowable = aiManager.doStreamRequest(QuestionConstant.QUESTION_PROMPT, userMessage, null);
+        // 定义一个计数器,原子型
+        AtomicInteger count = new AtomicInteger(0);
+        StringBuilder SingleQuestion = new StringBuilder();
+        // 可以是single或者io
+        Scheduler io = Schedulers.single();
+        // 如果是vip，用自定义的线程池
+        User user = userService.getLoginUser(request);
+        if (user.getUserRole().equals(UserConstant.VIP_ROLE)) {
+            io = vipScheduler;
+        }
+
+        flowable
+                .observeOn(io)
+                .map(modelData -> modelData.getChoices().get(0).getDelta().getContent())
+                .map(content -> content.replaceAll("\\s", ""))
+                .filter(StrUtil::isNotBlank)
+                .flatMap(content -> {
+                    List<Character> characters = new ArrayList<>();
+                    for (char c : content.toCharArray()) {
+                        characters.add(c);
+                    }
+                    return Flowable.fromIterable(characters);
+                })
+                .doOnNext(c -> {
+                    if (c.equals('{')) {
+                        count.addAndGet(1);
+                    }
+
+                    if (count.get() > 0) {
+                        SingleQuestion.append(c);
+                    }
+
+                    if (c.equals('}')) {
+                        count.addAndGet(-1);
+                        if (count.get() == 0) {
+                            sseEmitter.send(JSONUtil.toJsonStr(SingleQuestion.toString()));
+                            SingleQuestion.setLength(0);
+                        }
+                    }
+
+                })
+                .doOnError((e) -> {
+                    log.error("SSE异常", e);
+                })
+                .doOnComplete(sseEmitter::complete)
+                .subscribe();
+
+        return sseEmitter;
     }
 
     // endregion

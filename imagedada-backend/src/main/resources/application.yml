@@ -26,17 +26,48 @@ spring:
     password: cqj1211@
   # Redis 配置
   # todo 需替换配置，然后取消注释
-#  redis:
-#    database: 1
-#    host: localhost
-#    port: 6379
-#    timeout: 5000
-#    password: 123456
+  redis:
+    database: 1
+    host: 8.134.112.58
+    port: 6379
+    timeout: 5000
+    password: 181399
   # 文件上传
   servlet:
     multipart:
       # 大小限制
       max-file-size: 10MB
+  # 分库分表配置
+  shardingsphere:
+    #数据源配置
+    datasource:
+      # 多数据源以逗号隔开即可
+      names: imagedada
+      imagedada:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        jdbc-url: jdbc:mysql://8.134.112.58:3306/imagedada
+        username: zzRd
+        password: cqj1211@
+    # 规则配置
+    rules:
+      sharding:
+        # 分片算法配置
+        sharding-algorithms:
+          # 自定义分片规则名
+          answer-table-inline:
+            ## inline 类型是简单的配置文件里面就能写的类型，其他还有自定义类等等
+            type: INLINE
+            props:
+              algorithm-expression: user_answer_$->{appId % 2}
+        tables:
+          user_answer:
+            actual-data-nodes: imagedada.user_answer_$->{0..1}
+            # 分表策略
+            table-strategy:
+              standard:
+                sharding-column: appId
+                sharding-algorithm-name: answer-table-inline
 server:
   address: 0.0.0.0
   port: 8400
@@ -74,3 +105,11 @@ knife4j:
         api-rule: package
         api-rule-resources:
           - com.image.project.controller
+ai:
+  apiKey: 6bfa02695b698abdd0506b1027082f85.ZDOQJHwuxCQpwrKj
+
+dysms:
+  ALIBABA_CLOUD_ACCESS_KEY_ID: LTAI5tF5oQxWf3FhhFUS8CEq
+  ALIBABA_CLOUD_ACCESS_KEY_SECRET: JMxSCfLFof442RSmiSzMUBsxQ4i1Kk
+
+

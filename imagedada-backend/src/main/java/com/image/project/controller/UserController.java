@@ -10,6 +10,7 @@ import com.image.project.constant.UserConstant;
 import com.image.project.exception.BusinessException;
 import com.image.project.exception.ThrowUtils;
 import com.image.project.model.dto.user.*;
+import com.image.project.model.dto.verificationcode.VerifyRequest;
 import com.image.project.model.entity.User;
 import com.image.project.model.vo.LoginUserVO;
 import com.image.project.model.vo.UserVO;
@@ -41,6 +42,28 @@ public class UserController {
     private UserService userService;
 
     // region 登录相关
+
+
+    /**
+     * 用户登录（手机号）
+     *
+     * @param verifyRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/login/sms")
+    public BaseResponse<LoginUserVO> userLoginSms(@RequestBody VerifyRequest verifyRequest, HttpServletRequest request) {
+        if (verifyRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        String phone = verifyRequest.getPhoneNumber();
+        String code = verifyRequest.getCode();
+        if (StringUtils.isAnyBlank(phone, code)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        LoginUserVO loginUserVO = userService.userLoginSms(phone, code, request);
+        return ResultUtils.success(loginUserVO);
+    }
 
     /**
      * 用户注册
@@ -166,7 +189,7 @@ public class UserController {
     @PostMapping("/update")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateRequest userUpdateRequest,
-            HttpServletRequest request) {
+                                            HttpServletRequest request) {
         if (userUpdateRequest == null || userUpdateRequest.getId() == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -219,7 +242,7 @@ public class UserController {
     @PostMapping("/list/page")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Page<User>> listUserByPage(@RequestBody UserQueryRequest userQueryRequest,
-            HttpServletRequest request) {
+                                                   HttpServletRequest request) {
         long current = userQueryRequest.getCurrent();
         long size = userQueryRequest.getPageSize();
         Page<User> userPage = userService.page(new Page<>(current, size),
@@ -236,7 +259,7 @@ public class UserController {
      */
     @PostMapping("/list/page/vo")
     public BaseResponse<Page<UserVO>> listUserVOByPage(@RequestBody UserQueryRequest userQueryRequest,
-            HttpServletRequest request) {
+                                                       HttpServletRequest request) {
         if (userQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -263,7 +286,7 @@ public class UserController {
      */
     @PostMapping("/update/my")
     public BaseResponse<Boolean> updateMyUser(@RequestBody UserUpdateMyRequest userUpdateMyRequest,
-            HttpServletRequest request) {
+                                              HttpServletRequest request) {
         if (userUpdateMyRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }

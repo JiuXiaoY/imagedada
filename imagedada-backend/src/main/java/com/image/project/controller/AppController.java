@@ -1,5 +1,6 @@
 package com.image.project.controller;
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.image.project.annotation.AuthCheck;
 import com.image.project.common.*;
@@ -22,6 +23,8 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 
 /**
@@ -92,6 +95,23 @@ public class AppController {
         }
         // 操作数据库
         boolean result = appService.removeById(id);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        return ResultUtils.success(true);
+    }
+
+    @PostMapping("/deleteBatch")
+    public BaseResponse<Boolean> deleteBatchApp(@RequestBody DeleteBatchRequest deleteBatchRequest, HttpServletRequest request) {
+        Long[] ids = deleteBatchRequest.getIds();
+        if (ids.length == 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+
+        User user = userService.getLoginUser(request);
+        if (!userService.isAdmin(request)) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
+        }
+
+        boolean result = appService.removeBatchByIds(CollectionUtil.toList(ids));
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
     }
@@ -238,8 +258,9 @@ public class AppController {
 
     /**
      * 审核应用
+     *
      * @param reviewRequest 参数
-     * @param request 请求
+     * @param request       请求
      * @return true or false
      */
     @PostMapping("/review")

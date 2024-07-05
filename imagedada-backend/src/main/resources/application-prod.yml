@@ -1,31 +1,100 @@
 # 线上配置文件
-# @author <a href="https://github.com/liyupi">程序员鱼皮</a>
-# @from <a href="https://yupi.icu">编程导航知识星球</a>
 server:
-  port: 8101
+  port: 8400
+  servlet:
+    context-path: /api
+    # cookie 30 天过期
+    session:
+      cookie:
+        max-age: 2592000
 spring:
+  application:
+    name: imagedada-backend
   # 数据库配置
-  # todo 需替换配置
+  # 需替换配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/imagedada
-    username: root
-    password: 123456
+    url: jdbc:mysql://8.134.112.58:3306/imagedada
+    username: zzRd
+    password: cqj1211@
   # Redis 配置
-  # todo 需替换配置
+  # 需替换配置
   redis:
     database: 1
-    host: localhost
+    host: 8.134.112.58
     port: 6379
     timeout: 5000
-    password: 123456
+    password: 181399
+  session:
+    store-type: redis
+    timeout: 2592000
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  # 文件上传
+  servlet:
+    multipart:
+      # 大小限制
+      max-file-size: 10MB
+  # 分库分表配置
+  shardingsphere:
+    #数据源配置
+    datasource:
+      # 多数据源以逗号隔开即可
+      names: imagedada
+      imagedada:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        jdbc-url: jdbc:mysql://8.134.112.58:3306/imagedada
+        username: zzRd
+        password: cqj1211@
+    # 规则配置
+    rules:
+      sharding:
+        # 分片算法配置
+        sharding-algorithms:
+          # 自定义分片规则名
+          answer-table-inline:
+            ## inline 类型是简单的配置文件里面就能写的类型，其他还有自定义类等等
+            type: INLINE
+            props:
+              algorithm-expression: user_answer_$->{appId % 2}
+        tables:
+          user_answer:
+            actual-data-nodes: imagedada.user_answer_$->{0..1}
+            # 分表策略
+            table-strategy:
+              standard:
+                sharding-column: appId
+                sharding-algorithm-name: answer-table-inline
 mybatis-plus:
   configuration:
-    # 生产环境关闭日志
+    map-underscore-to-camel-case: false
     log-impl: ''
+  global-config:
+    db-config:
+      logic-delete-field: isDelete # 全局逻辑删除的实体字段名
+      logic-delete-value: 1 # 逻辑已删除值（默认为 1）
+      logic-not-delete-value: 0 # 逻辑未删除值（默认为 0）
+
+# 对象存储
+# 需替换配置
+cos:
+  client:
+    accessKey: xxx
+    secretKey: xxx
+    region: xxx
+    bucket: xxx
 # 接口文档配置
 knife4j:
   basic:
     enable: true
     username: root
     password: 123456
+
+ai:
+  apiKey: 6bfa02695b698abdd0506b1027082f85.ZDOQJHwuxCQpwrKj
+
+dysms:
+  ALIBABA_CLOUD_ACCESS_KEY_ID: LTAI5tF5oQxWf3FhhFUS8CEq
+  ALIBABA_CLOUD_ACCESS_KEY_SECRET: JMxSCfLFof442RSmiSzMUBsxQ4i1Kk
