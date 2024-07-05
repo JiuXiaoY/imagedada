@@ -1,8 +1,11 @@
 import { getAppVoByIdUsingGet } from '@/services/imagedada-backend/appController';
 import { listQuestionVoByPageUsingPost } from '@/services/imagedada-backend/questionController';
-import { addUserAnswerUsingPost } from '@/services/imagedada-backend/userAnswerController';
+import {
+  addUserAnswerUsingPost,
+  generateIdUsingGet,
+} from '@/services/imagedada-backend/userAnswerController';
 import { history } from '@umijs/max';
-import { Button, Card, message, Radio, RadioChangeEvent } from 'antd';
+import { Button, Card, Radio, RadioChangeEvent, message } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 
@@ -14,6 +17,18 @@ const App: React.FC = () => {
   const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [cardLoading, setCardLoading] = useState(false);
+  const [snowflakeNextId, setSnowflakeNextId] = useState<number>(0);
+
+  const loadSnowflakeNextId = async () => {
+    try {
+      const res = await generateIdUsingGet();
+      if (res.data) {
+        setSnowflakeNextId(res.data);
+      }
+    } catch (error: any) {
+      message.error('获取雪花ID错误');
+    }
+  };
 
   const loadQuestionData = async () => {
     setCardLoading(true);
@@ -57,6 +72,7 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
+    loadSnowflakeNextId().then();
     loadQuestionData().then();
     loadAppData().then();
   }, []);
@@ -79,6 +95,7 @@ const App: React.FC = () => {
       const res = await addUserAnswerUsingPost({
         appId: Number(params.id),
         choices: selectedAnswers,
+        id: snowflakeNextId,
       });
       if (res.data) {
         message.success('提交成功,3秒后跳转结果页');

@@ -1,4 +1,9 @@
 import { Footer } from '@/components';
+import { sendSmsUsingPost } from '@/services/imagedada-backend/smsController';
+import {
+  userLoginSmsUsingPost,
+  userLoginUsingPost,
+} from '@/services/imagedada-backend/userController';
 import {
   AlipayCircleOutlined,
   LockOutlined,
@@ -18,7 +23,6 @@ import { Tabs, message } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useState } from 'react';
 import Settings from '../../../../config/defaultSettings';
-import { userLoginUsingPost } from '@/services/imagedada-backend/userController';
 
 const useStyles = createStyles(({ token }) => {
   return {
@@ -95,6 +99,29 @@ const Login: React.FC = () => {
     }
   };
 
+  const handleSms = async (values: API.VerifyRequest) => {
+    try {
+      const res = await userLoginSmsUsingPost({
+        ...values,
+      });
+      if (res.data) {
+        const urlParams = new URL(window.location.href).searchParams;
+        setTimeout(() => {
+          history.push(urlParams.get('redirect') || '/');
+        }, 200);
+        message.success('登录成功！');
+        setInitialState({
+          loginUser: res.data,
+        });
+        return;
+      }
+    } catch (error) {
+      const defaultLoginFailureMessage = '登录失败，请重试！';
+      console.log(error);
+      message.error(defaultLoginFailureMessage);
+    }
+  };
+
   return (
     <div className={styles.container}>
       <Helmet>
@@ -121,7 +148,12 @@ const Login: React.FC = () => {
           }}
           actions={['其他登录方式 :', <ActionIcons key="icons" />]}
           onFinish={async (values) => {
-            await handleSubmit(values as API.UserLoginRequest);
+            if (type === 'account') {
+              await handleSubmit(values as API.UserLoginRequest);
+            }
+            if (type === 'mobile') {
+              await handleSms(values as API.VerifyRequest);
+            }
           }}
         >
           <Tabs
@@ -176,11 +208,11 @@ const Login: React.FC = () => {
           {type === 'mobile' && (
             <>
               <ProFormText
+                name="phoneNumber"
                 fieldProps={{
                   size: 'large',
                   prefix: <MobileOutlined />,
                 }}
-                name="mobile"
                 placeholder={'请输入手机号！'}
                 rules={[
                   {
@@ -202,28 +234,28 @@ const Login: React.FC = () => {
                   size: 'large',
                 }}
                 placeholder={'请输入验证码！'}
+                phoneName="phoneNumber"
                 captchaTextRender={(timing, count) => {
                   if (timing) {
                     return `${count} ${'秒后重新获取'}`;
                   }
                   return '获取验证码';
                 }}
-                name="captcha"
+                name="code"
                 rules={[
                   {
                     required: true,
                     message: '验证码是必填项！',
                   },
                 ]}
-                /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-                onGetCaptcha={async (phone) => {
-                  // const result = await getFakeCaptcha({
-                  //   phone,
-                  // });
-                  // if (!result) {
-                  //   return;
-                  // }
-                  message.success('获取验证码成功！验证码为：1234');
+                onGetCaptcha={async (phoneNumber) => {
+                  const res = await sendSmsUsingPost({
+                    phoneNumber: phoneNumber,
+                  });
+                  if (!res.data) {
+                    return;
+                  }
+                  message.success('获取验证码成功!');
                 }}
               />
             </>

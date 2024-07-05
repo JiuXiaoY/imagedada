@@ -21,8 +21,9 @@ const App: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
+      console.log(BigInt(params.id as string))
       const res = await getUserAnswerVoByIdUsingGet({
-        id: Number(params.id),
+        id: BigInt(params.id as string)
       });
       setUserAnswer(res.data);
       setLoading(false);

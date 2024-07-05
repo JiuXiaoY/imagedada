@@ -29,6 +29,21 @@ export async function deleteAppUsingPost(
   });
 }
 
+/** deleteBatchApp POST /api/app/deleteBatch */
+export async function deleteBatchAppUsingPost(
+  body: API.DeleteBatchRequest,
+  options?: { [key: string]: any },
+) {
+  return request<API.BaseResponseBoolean_>('/api/app/deleteBatch', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
 /** editApp POST /api/app/edit */
 export async function editAppUsingPost(body: API.AppEditRequest, options?: { [key: string]: any }) {
   return request<API.BaseResponseBoolean_>('/api/app/edit', {

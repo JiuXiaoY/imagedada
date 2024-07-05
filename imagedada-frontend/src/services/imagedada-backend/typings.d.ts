@@ -1,4 +1,22 @@
 declare namespace API {
+  type aiGenerateQuestionSSEUsingGETParams = {
+    appId?: number;
+    optionNum?: number;
+    questionNum?: number;
+  };
+
+  type aiGenerateQuestionSSEVipUsingGETParams = {
+    appId?: number;
+    optionNum?: number;
+    questionNum?: number;
+  };
+
+  type AiGenerateRequest = {
+    appId?: number;
+    optionNum?: number;
+    questionNum?: number;
+  };
+
   type App = {
     appDesc?: string;
     appIcon?: string;
@@ -22,6 +40,16 @@ declare namespace API {
     appName?: string;
     appType?: number;
     scoringStrategy?: number;
+  };
+
+  type AppAnswerCountDTO = {
+    answerCount?: number;
+    appId?: number;
+  };
+
+  type AppAnswerResultCountDTO = {
+    resultCount?: string;
+    resultName?: string;
   };
 
   type AppEditRequest = {
@@ -95,6 +123,24 @@ declare namespace API {
   type BaseResponseInt_ = {
     code?: number;
     data?: number;
+    message?: string;
+  };
+
+  type BaseResponseListAppAnswerCountDTO_ = {
+    code?: number;
+    data?: AppAnswerCountDTO[];
+    message?: string;
+  };
+
+  type BaseResponseListAppAnswerResultCountDTO_ = {
+    code?: number;
+    data?: AppAnswerResultCountDTO[];
+    message?: string;
+  };
+
+  type BaseResponseListQuestionContentDTO_ = {
+    code?: number;
+    data?: QuestionContentDTO[];
     message?: string;
   };
 
@@ -188,12 +234,6 @@ declare namespace API {
     message?: string;
   };
 
-  type BaseResponseQuestionContentDTO_ = {
-    code?: number;
-    data?: QuestionContentDTO;
-    message?: string;
-  };
-
   type BaseResponseQuestionVO_ = {
     code?: number;
     data?: QuestionVO;
@@ -230,8 +270,17 @@ declare namespace API {
     message?: string;
   };
 
+  type DeleteBatchRequest = {
+    ids?: number[];
+  };
+
   type DeleteRequest = {
     id?: number;
+  };
+
+  type getAppAnswerResultCountUsingGETParams = {
+    /** appId */
+    appId?: number;
   };
 
   type getAppVOByIdUsingGETParams = {
@@ -242,11 +291,6 @@ declare namespace API {
   type getPostVOByIdUsingGETParams = {
     /** id */
     id?: number;
-  };
-
-  type getQuestionContentDtoUsingGETParams = {
-    /** appId */
-    appId?: number;
   };
 
   type getQuestionVOByIdUsingGETParams = {
@@ -660,6 +704,14 @@ declare namespace API {
     userId?: number;
   };
 
+  type SmsRequest = {
+    phoneNumber?: string;
+  };
+
+  type SseEmitter = {
+    timeout?: number;
+  };
+
   type uploadFileUsingPOSTParams = {
     biz?: string;
   };
@@ -669,6 +721,7 @@ declare namespace API {
     id?: number;
     isDelete?: number;
     mpOpenId?: string;
+    phone?: string;
     unionId?: string;
     updateTime?: string;
     userAccount?: string;
@@ -706,6 +759,7 @@ declare namespace API {
   type UserAnswerAddRequest = {
     appId?: number;
     choices?: string[];
+    id?: number;
   };
 
   type UserAnswerEditRequest = {
@@ -800,5 +854,10 @@ declare namespace API {
     userName?: string;
     userProfile?: string;
     userRole?: string;
+  };
+
+  type VerifyRequest = {
+    code?: string;
+    phoneNumber?: string;
   };
 }

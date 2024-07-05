@@ -1,3 +1,4 @@
+import ShareModal from '@/pages/CommonComponents/ShareModal';
 import { getAppVoByIdUsingGet } from '@/services/imagedada-backend/appController';
 import { useModel, useParams } from '@@/exports';
 import { Avatar, Button, Card, Divider, List, message } from 'antd';
@@ -8,6 +9,7 @@ const App: React.FC = () => {
   const params = useParams();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<API.AppVO>();
+  const [shareModalVisible, setShareModalVisible] = useState(false);
   // 获取用户全局信息
   const { initialState, setInitialState } = useModel('@@initialState');
 
@@ -32,6 +34,14 @@ const App: React.FC = () => {
   useEffect(() => {
     loadData().then();
   }, []);
+
+  const onCancel = () => {
+    setShareModalVisible(false);
+  };
+
+  const onOpen = () => {
+    setShareModalVisible(true);
+  };
 
   return (
     <div className="detailPage" style={{ display: 'flex', margin: '0 auto' }}>
@@ -64,7 +74,9 @@ const App: React.FC = () => {
                     开始答题
                   </Button>
                   <Divider type="vertical" />
-                  <Button type="dashed">分享应用</Button>
+                  <Button type="dashed" onClick={onOpen}>
+                    分享应用
+                  </Button>
                   {loginUser && loginUser?.id === data?.userId && (
                     <>
                       <Divider type="vertical" />
@@ -89,6 +101,7 @@ const App: React.FC = () => {
           <>数据有误</>
         )}
       </Card>
+      <ShareModal visible={shareModalVisible} onCancel={onCancel} linkUrl="http://bt.imagegem.cn/favicon.png"></ShareModal>
     </div>
   );
 };

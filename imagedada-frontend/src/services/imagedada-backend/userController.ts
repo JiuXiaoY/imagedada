@@ -112,6 +112,21 @@ export async function userLoginUsingPost(
   });
 }
 
+/** userLoginSms POST /api/user/login/sms */
+export async function userLoginSmsUsingPost(
+  body: API.VerifyRequest,
+  options?: { [key: string]: any },
+) {
+  return request<API.BaseResponseLoginUserVO_>('/api/user/login/sms', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
 /** userLogout POST /api/user/logout */
 export async function userLogoutUsingPost(options?: { [key: string]: any }) {
   return request<API.BaseResponseBoolean_>('/api/user/logout', {

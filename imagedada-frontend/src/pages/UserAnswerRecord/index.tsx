@@ -1,12 +1,12 @@
 import {
-  deleteUserAnswerUsingPost, listMyUserAnswerVoByPageUsingPost,
-  listUserAnswerByPageUsingPost,
+  deleteUserAnswerUsingPost,
+  listMyUserAnswerVoByPageUsingPost,
 } from '@/services/imagedada-backend/userAnswerController';
 import { useModel } from '@@/exports';
 import { EllipsisOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
-import { Button, Dropdown, message } from 'antd';
+import { Button, Dropdown, Image, message } from 'antd';
 import { useRef, useState } from 'react';
 
 export default () => {
@@ -62,6 +62,13 @@ export default () => {
       title: '用户选择',
       dataIndex: 'choices',
       valueType: 'text',
+      ellipsis: true,
+      render: (text, record) => {
+        if (Array.isArray(record.choices)) {
+          return record.choices.join(', '); // 你可以根据需要自定义显示方式
+        }
+        return record.choices;
+      },
     },
     {
       title: '结果名称',
@@ -72,11 +79,13 @@ export default () => {
       title: '结果描述',
       dataIndex: 'resultDesc',
       valueType: 'text',
+      ellipsis: true,
     },
     {
       title: '结果图标',
       dataIndex: 'resultPicture',
-      valueType: 'text',
+      valueType: 'image',
+      render: (text, record) => <Image src={record.resultPicture} width={50} height={50} />,
       hideInSearch: true,
     },
     {
@@ -124,8 +133,10 @@ export default () => {
         cardBordered
         request={async (params) => {
           const res = await listMyUserAnswerVoByPageUsingPost({
-            userId: loginUser?.id,
             ...params,
+            sortField: 'updateTime',
+            sortOrder: 'descend',
+            userId: loginUser?.id,
           });
           if (res?.data) {
             return {

@@ -15,7 +15,7 @@ import {
   ProTable,
   TableDropdown,
 } from '@ant-design/pro-components';
-import { Button, Drawer, Dropdown, Select, message } from 'antd';
+import { Button, Drawer, Dropdown, Image, Select, message } from 'antd';
 import { useRef, useState } from 'react';
 
 export default () => {
@@ -151,7 +151,8 @@ export default () => {
     {
       title: '结果图标',
       dataIndex: 'resultPicture',
-      valueType: 'text',
+      valueType: 'image',
+      render: (text, record) => <Image src={record.resultPicture} width={50} height={50} />,
       hideInSearch: true,
     },
     {

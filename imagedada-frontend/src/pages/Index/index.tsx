@@ -23,6 +23,7 @@ const App: React.FC = () => {
       setLoading(true);
       const res = await listAppVoByPageUsingPost({
         ...searchParams,
+        reviewStatus: 1,
       });
       console.log(res);
       setDataList(res.data?.records ?? []);

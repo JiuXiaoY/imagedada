@@ -2,8 +2,9 @@ import CreateModal from '@/pages/CommonComponents/CreateModal';
 import UpdateModal from '@/pages/CommonComponents/UpdateModal';
 import {
   addAppUsingPost,
-  deleteAppUsingPost,
+  deleteAppUsingPost, deleteBatchAppUsingPost,
   listAppByPageUsingPost,
+  reviewAppUsingPost,
   updateAppUsingPost,
 } from '@/services/imagedada-backend/appController';
 import { EllipsisOutlined, PlusOutlined } from '@ant-design/icons';
@@ -56,7 +57,6 @@ export default () => {
    */
   const handleUpdate = async (fields: API.App) => {
     if (!currentRow) {
-      console.log('ex');
       return;
     }
     const hide = message.loading('修改中');
@@ -67,6 +67,7 @@ export default () => {
       });
       hide();
       message.success('操作成功');
+      actionRef.current?.reload();
       return true;
     } catch (error: any) {
       hide();
@@ -99,27 +100,49 @@ export default () => {
    *
    * @param
    */
-  // const handleBatchRemove = async () => {
-  //   const hide = message.loading('正在批量删除');
-  //   if (!selectedRowsState || selectedRowsState.length <= 0) {
-  //     hide();
-  //     message.error('请选择需要删除的数据');
-  //     return;
-  //   }
-  //   const ids = selectedRowsState.map((item) => item.id!);
-  //   try {
-  //     await deleteBatchInterfaceInfoUsingPost({
-  //       ids: ids
-  //     });
-  //     hide();
-  //     message.success('批量删除成功');
-  //     return true;
-  //   } catch (error: any) {
-  //     hide();
-  //     message.error('删除失败，' + error.message);
-  //     return false;
-  //   }
-  // };
+  const handleBatchRemove = async () => {
+    const hide = message.loading('正在批量删除');
+    if (!selectedRowsState || selectedRowsState.length <= 0) {
+      hide();
+      message.error('请选择需要删除的数据');
+      return;
+    }
+    const ids = selectedRowsState.map((item) => item.id!);
+    try {
+      await deleteBatchAppUsingPost({
+        ids: ids,
+      });
+      hide();
+      message.success('批量删除成功');
+      return true;
+    } catch (error: any) {
+      hide();
+      message.error('删除失败，' + error.message);
+      return false;
+    }
+  };
+
+  const handleReview = async () => {
+    if (!currentRow) {
+      return;
+    }
+    const hide = message.loading('审核中');
+    try {
+      await reviewAppUsingPost({
+        id: currentRow.id,
+        reviewStatus: 1,
+        reviewMessage: currentRow.reviewMessage,
+      });
+      hide();
+      message.success('审核成功');
+      actionRef.current?.reload();
+      return true;
+    } catch (error: any) {
+      hide();
+      message.error('操作失败，' + error.message);
+      return false;
+    }
+  };
 
   const columns: ProColumns<API.App>[] = [
     {
@@ -143,9 +166,7 @@ export default () => {
       title: '应用图标',
       dataIndex: 'appIcon',
       valueType: 'image',
-      render: (text, record) => (
-        <Image src={record.appIcon} width={50} height={50} />
-      ),
+      render: (text, record) => <Image src={record.appIcon} width={50} height={50} />,
       hideInSearch: true,
     },
     {
@@ -206,7 +227,15 @@ export default () => {
     {
       title: '得分策略',
       dataIndex: 'scoringStrategy',
-      valueType: 'text',
+      hideInForm: true,
+      valueEnum: {
+        0: {
+          text: '自定义',
+        },
+        1: {
+          text: 'AI',
+        },
+      },
     },
 
     {
@@ -237,7 +266,13 @@ export default () => {
         >
           编辑
         </a>,
-        <a key="review" onClick={() => {}}>
+        <a
+          key="review"
+          onClick={() => {
+            setCurrentRow(record);
+            handleReview().then();
+          }}
+        >
           审核
         </a>,
         <TableDropdown
@@ -341,7 +376,7 @@ export default () => {
         >
           <Button
             onClick={async () => {
-              // await handleRemove(selectedRowsState);
+              await handleBatchRemove();
               setSelectedRows([]);
               actionRef.current?.reloadAndRest?.();
             }}

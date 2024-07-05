@@ -15,7 +15,7 @@ import {
   ProTable,
   TableDropdown,
 } from '@ant-design/pro-components';
-import {Button, Drawer, Dropdown, Input, message} from 'antd';
+import {Button, Drawer, Dropdown, Image, message} from 'antd';
 import { useRef, useState } from 'react';
 
 export default () => {
@@ -58,8 +58,11 @@ export default () => {
     if (!currentRow) {
       return;
     }
-    const choicesArray = fields.choices?.toString().split(',').map(item => item.trim());
-    console.log(choicesArray)
+    const choicesArray = fields.choices
+      ?.toString()
+      .split(',')
+      .map((item) => item.trim());
+    console.log(choicesArray);
     const hide = message.loading('修改中');
     try {
       await updateUserAnswerUsingPost({
@@ -168,11 +171,13 @@ export default () => {
       title: '结果描述',
       dataIndex: 'resultDesc',
       valueType: 'text',
+      ellipsis: true,
     },
     {
       title: '结果图标',
       dataIndex: 'resultPicture',
-      valueType: 'text',
+      valueType: 'image',
+      render: (text, record) => <Image src={record.resultPicture} width={50} height={50} />,
       hideInSearch: true,
     },
     {
@@ -183,8 +188,15 @@ export default () => {
     {
       title: '得分策略',
       dataIndex: 'scoringStrategy',
-      valueType: 'text',
       hideInForm: true,
+      valueEnum: {
+        0: {
+          text: '自定义',
+        },
+        1: {
+          text: 'AI',
+        },
+      },
     },
 
     {

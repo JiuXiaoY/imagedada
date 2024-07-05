@@ -66,6 +66,13 @@
     component: './UserAnswerRecord',
   },
   {
+    path: '/appStatistic',
+    icon: 'FireOutlined',
+    name: '统计分析',
+    component: './AppStatistic',
+    access: 'canAdmin',
+  },
+  {
     path: '/user',
     layout: false,
     routes: [
