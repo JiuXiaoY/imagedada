@@ -119,7 +119,7 @@ const App: React.FC = () => {
     }
     onClose();
     try {
-      // todo 手动填写后端完整地址
+      // 手动填写后端完整地址
       const eventSource = new EventSource(
         `http://localhost:8400/api/question/ai_generate/sse?appId=${params.id}&questionNum=${values.questionNum}&optionNum=${values.optionNum}`,
       );
